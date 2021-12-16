@@ -1,0 +1,77 @@
+---
+title: "Figure5"
+output: html_document
+---
+
+Before using: Please put this rmd file in the same folder where the Rcripts are, and install package stringr and pheatmap.
+```{r}
+library(stringr)
+library(pheatmap)
+source("binary_pie.R")              
+source("binary.R")                    
+source("disagree_sequence_extract.R") 
+source("escape_combi.R")             
+source("escape_network.R")          
+source("escape_stackedbar.R")         
+source("omni_read.R")                 
+source("pred_value_heatmap.R")       
+source("pred_value_hist.R" )      
+source("pred_value_pie.R" )          
+source("sum0.R")
+```
+
+```{r read csv files from prediction output}
+data_path<-"~/Desktop/jh_rbd1/20211012_newpredictions_withLY555model/"
+data<-omni_read(data_path = data_path)
+```
+
+1.histogram for prediction value distribution
+```{r hist}
+pred_value_hist(data = data,variant = c("alpha","beta","gamma","kappa","wuhan","new"),model=c("RF","RNN"))
+```
+
+2.heat maps to compare prediction value from two models
+```{r heatmap}
+pred_value_heatmap(data = data, distance=c(1,2), threshold=0.5, thres_range=c(0.25,0.75), model=c("RF","RNN"), variant=c("alpha","beta","gamma","kappa","wuhan","new"))
+```
+
+3.piecharts to compare decision made by the two models at given threshold
+```{r piecharts}
+pred_value_pie(data = data, distance=c(1,2), threshold=0.5,thres_range=c(0.25,0.75), model=c("RF","RNN"), variant=c("alpha","beta","gamma","kappa","wuhan","new"))
+```
+
+4.1 print out all mab name combinations. user can set color for different combinations in the man escape stacked barplot
+```{r color set up}
+#color setup. first get all combination of antibody escape
+all_combi<-escape_combi(data = data, distance=c(1,2), threshold=0.5,thres_range=c(0.25,0.75), model=c("RF","RNN"), variant=c("alpha","beta","gamma","kappa","wuhan","new"),n_antibody = 4)
+all_combi
+#set color for every type of antibody combination here. should make  a named character such as: c(None="#999999",LY16="#8cb0e6",LY555="#205cb6",REGN33="#79ccec",REGN87="#1c366a",LY16_LY555="#338104")
+
+#default colr= c(None="#999999", LY-CoV16="#8cb0e6", LY-CoV555="#205cb6",REGN10933="#79ccec",REGN10987="#1c366a", LY-CoV16_LY-CoV555="#338104", LY-CoV16_REGN10933="#c5ff60", LY-CoV16_REGN10987="#4d5026", LY-CoV555_REGN10933="#88fd41",REGN10933_REGN10987="#49836e", LY-CoV555_REGN10987="#fae80b", LY-CoV16_LY-CoV555_REGN10933="#ab6624", LY-CoV16_LY-CoV555_REGN10987="#f6b50a", LY-CoV16_REGN10933_REGN10987="#673900", LY-CoV555_REGN10933_REGN10987="#ff6900", LY-CoV16_LY-CoV555_REGN10933_REGN10987="#da0000")
+
+```
+
+4.2 make mab escape stacked bar plot. legend is plotted separately
+```{r stacked bar}
+escape_stackedbar(data = data, distance=c(1,2), threshold=0.5, thres_range=c(0.25,0.75), model=c("RF","RNN"), variant=c("alpha","beta","gamma","kappa","wuhan","new"))
+```
+
+Before using this, install software Cytoscape
+5.1 make a list of igraph items that can be exported to Cytoscape
+```{r network}
+
+igraph_list<-escape_network(data, distance=c(1,2), threshold=0.5, thres_range=c(0.25,0.75), model=c("RF","RNN"), variant=c("alpha","beta","gamma","kappa","wuhan","new"))
+
+```
+5.2 export to Cytoscape
+```{r }
+library(RCy3)
+RCy3::cytoscapePing()
+
+#push igraph_list to Cytoscape
+for(i in 1:6){
+ RCy3::createNetworkFromIgraph(igraph_list[[i]],names(igraph_list)[i])
+}
+
+# adjust layout in cytoscape
+```
